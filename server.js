@@ -7,6 +7,7 @@ const connectDB = require('./src/config/db');
 const authRoutes = require('./src/routes/auth.routes');
 const errorHandler = require('./src/middleware/error.middleware');
 const productRoutes = require('./src/routes/product.routes');
+const orderRoutes = require('./src/routes/order.routes');
 
 
 dotenv.config();
@@ -27,6 +28,8 @@ app.use('/api', limiter);
 app.use('/api/auth', authRoutes);
 // add after authRoutes
 app.use('/api/products', productRoutes);
+// add after productRoutes
+app.use('/api/orders', orderRoutes);
 
 // Error handler
 app.use(errorHandler);
