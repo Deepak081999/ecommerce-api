@@ -8,6 +8,7 @@ const authRoutes = require('./src/routes/auth.routes');
 const errorHandler = require('./src/middleware/error.middleware');
 const productRoutes = require('./src/routes/product.routes');
 const orderRoutes = require('./src/routes/order.routes');
+const path = require('path');
 
 
 dotenv.config();
@@ -30,6 +31,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 // add after productRoutes
 app.use('/api/orders', orderRoutes);
+
+// Static folder serve karo — images browser mein access hongi
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Error handler
 app.use(errorHandler);

@@ -4,17 +4,63 @@ const { productSchema, reviewSchema } = require('../validators/product.validator
 // @POST /api/products — Admin only
 const createProduct = async (req, res, next) => {
     try {
-        const parsed = productSchema.safeParse(req.body);
+        const parsed = productSchema.safeParse({
+            ...req.body,
+            price: Number(req.body.price),
+            stock: Number(req.body.stock),
+        });
         if (!parsed.success) {
             return res.status(400).json({ errors: parsed.error.flatten().fieldErrors });
         }
 
+        // Uploaded images ki paths
+        const images = req.files?.map(
+            (file) => `${req.protocol}://${req.get('host')}/uploads/${file.filename}`
+        ) || [];
+
         const product = await Product.create({
             ...parsed.data,
+            images,
             createdBy: req.user.id,
         });
 
         res.status(201).json({ message: 'Product created', product });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @PUT /api/products/:id — Admin only
+const updateProduct = async (req, res, next) => {
+    try {
+        const parsed = productSchema.partial().safeParse({
+            ...req.body,
+            ...(req.body.price && { price: Number(req.body.price) }),
+            ...(req.body.stock && { stock: Number(req.body.stock) }),
+        });
+        if (!parsed.success) {
+            return res.status(400).json({ errors: parsed.error.flatten().fieldErrors });
+        }
+
+        // Agar nayi images upload ki hain
+        const newImages = req.files?.map(
+            (file) => `${req.protocol}://${req.get('host')}/uploads/${file.filename}`
+        );
+
+        const updateData = {
+            ...parsed.data,
+            ...(newImages?.length && { images: newImages }),
+        };
+
+        const product = await Product.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true, runValidators: true }
+        );
+
+        if (!product) return res.status(404).json({ message: 'Product not found' });
+
+        res.status(200).json({ message: 'Product updated', product });
     } catch (error) {
         next(error);
     }
@@ -92,29 +138,6 @@ const getProduct = async (req, res, next) => {
     }
 };
 
-// @PUT /api/products/:id — Admin only
-const updateProduct = async (req, res, next) => {
-    try {
-        const parsed = productSchema.partial().safeParse(req.body);
-        if (!parsed.success) {
-            return res.status(400).json({ errors: parsed.error.flatten().fieldErrors });
-        }
-
-        const product = await Product.findByIdAndUpdate(
-            req.params.id,
-            parsed.data,
-            { new: true, runValidators: true }
-        );
-
-        if (!product) {
-            return res.status(404).json({ message: 'Product not found' });
-        }
-
-        res.status(200).json({ message: 'Product updated', product });
-    } catch (error) {
-        next(error);
-    }
-};
 
 // @DELETE /api/products/:id — Admin only
 const deleteProduct = async (req, res, next) => {
